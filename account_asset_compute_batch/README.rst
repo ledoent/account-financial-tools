@@ -76,10 +76,10 @@ Authors
 Contributors
 ------------
 
-- `Ecosoft <http://ecosoft.co.th>`__:
+-  `Ecosoft <http://ecosoft.co.th>`__:
 
-  - Kitti U. <kittiu@ecosoft.co.th>
-  - Pimolnat Suntian <pimolnats@ecosoft.co.th>
+   -  Kitti U. <kittiu@ecosoft.co.th>
+   -  Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
 -----------
