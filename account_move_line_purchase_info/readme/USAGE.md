@@ -1,7 +1,4 @@
-The purchase order line will be automatically copied to the journal
-items.
-
-- When a supplier invoice is created referencing purchase orders, the
-  purchase order line will be copied to the corresponding journal item.
-- When a stock move is validated and generates a journal entry, the
-  purchase order line is copied to the account move line.
+Purchase Order Tracking: Quickly identify which accounting entries relate to specific purchase orders
+Audit & Compliance: Improve traceability from financial records back to procurement documents
+Financial Analysis: Analyze costs and expenses grouped by purchase orders
+Reconciliation: Easier matching of vendor invoices with their corresponding purchase orders

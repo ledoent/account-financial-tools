@@ -1,3 +1,7 @@
+.. image:: https://odoo-community.org/readme-banner-image
+   :target: https://odoo-community.org/get-involved?utm_source=readme
+   :alt: Odoo Community Association
+
 ===============================
 Account Move Line Purchase Info
 ===============================
@@ -13,34 +17,25 @@ Account Move Line Purchase Info
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Faccount--financial--tools-lightgray.png?logo=github
-    :target: https://github.com/OCA/account-financial-tools/tree/18.0/account_move_line_purchase_info
+    :target: https://github.com/OCA/account-financial-tools/tree/19.0/account_move_line_purchase_info
     :alt: OCA/account-financial-tools
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/account-financial-tools-18-0/account-financial-tools-18-0-account_move_line_purchase_info
+    :target: https://translation.odoo-community.org/projects/account-financial-tools-19-0/account-financial-tools-19-0-account_move_line_purchase_info
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runboat-Try%20me-875A7B.png
-    :target: https://runboat.odoo-community.org/builds?repo=OCA/account-financial-tools&target_branch=18.0
+    :target: https://runboat.odoo-community.org/builds?repo=OCA/account-financial-tools&target_branch=19.0
     :alt: Try me on Runboat
 
 |badge1| |badge2| |badge3| |badge4| |badge5|
 
-This module will add the purchase order line to journal items.
-
-The ultimate goal is to establish the purchase order line as one of the
-key fields to reconcile the Goods Received Not Invoiced accrual account.
-
-Field oca_purchase_line_id it's necessary. In Odoo >=16 automatic
-revaluation for a product with FIFO costing method only works if invoice
-lines related to a purchase order line do not include stock journal
-items. To avoid that oca_purchase_line_id includes invoice and stock
-journal items, and we keep Odoo field invoice_lines just with bill
-lines.
-
-- Check issue https://github.com/OCA/account-financial-tools/issues/2017
+This module enhances Odoo's accounting functionality by adding purchase
+order information directly to account move lines (journal items). It
+provides better traceability between accounting entries and their
+originating purchase orders.
 
 **Table of contents**
 
@@ -50,13 +45,12 @@ lines.
 Usage
 =====
 
-The purchase order line will be automatically copied to the journal
-items.
-
-- When a supplier invoice is created referencing purchase orders, the
-  purchase order line will be copied to the corresponding journal item.
-- When a stock move is validated and generates a journal entry, the
-  purchase order line is copied to the account move line.
+Purchase Order Tracking: Quickly identify which accounting entries
+relate to specific purchase orders Audit & Compliance: Improve
+traceability from financial records back to procurement documents
+Financial Analysis: Analyze costs and expenses grouped by purchase
+orders Reconciliation: Easier matching of vendor invoices with their
+corresponding purchase orders
 
 Bug Tracker
 ===========
@@ -64,7 +58,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/account-financial-tools/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/account-financial-tools/issues/new?body=module:%20account_move_line_purchase_info%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/account-financial-tools/issues/new?body=module:%20account_move_line_purchase_info%0Aversion:%2019.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -82,6 +76,7 @@ Contributors
 - Jordi Ballester Alomar <jordi.ballester@forgeflow.com>
 - Héctor Villarreal <hector.villarreal@forgeflow.com>
 - Pimolnat Suntian <pimolnats@ecosoft.co.th>
+- Jasmin Solanki <jasmin.solanki@forgeflow.com>
 
 Maintainers
 -----------
@@ -96,6 +91,6 @@ OCA, or the Odoo Community Association, is a nonprofit organization whose
 mission is to support the collaborative development of Odoo features and
 promote its widespread use.
 
-This module is part of the `OCA/account-financial-tools <https://github.com/OCA/account-financial-tools/tree/18.0/account_move_line_purchase_info>`_ project on GitHub.
+This module is part of the `OCA/account-financial-tools <https://github.com/OCA/account-financial-tools/tree/19.0/account_move_line_purchase_info>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.
