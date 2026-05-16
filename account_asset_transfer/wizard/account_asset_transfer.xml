@@ -1,5 +1,4 @@
 <odoo>
-
     <record id="account_asset_transfer_view_form" model="ir.ui.view">
         <field name="name">account.asset.transfer.form</field>
         <field name="model">account.asset.transfer</field>
@@ -82,7 +81,7 @@
 
     <record id="action_asset_transfer_from_list" model="ir.actions.server">
         <field name="name">Transfer Asset</field>
-        <field name="groups_id" eval="[(4, ref('account.group_account_manager'))]" />
+        <field name="group_ids" eval="[(4, ref('account.group_account_manager'))]" />
         <field name="model_id" ref="account_asset_management.model_account_asset" />
         <field
             name="binding_model_id"
@@ -95,5 +94,4 @@ if records:
     action = records.transfer()
         </field>
     </record>
-
 </odoo>
