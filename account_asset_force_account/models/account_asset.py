@@ -17,7 +17,7 @@ class AccountAsset(models.Model):
     account_depreciation_id = fields.Many2one(
         comodel_name="account.account",
         string="Depreciation Account",
-        domain="[('deprecated', '=', False), ('company_ids', '=', company_id)]",
+        domain="[('active', '=', True), ('company_ids', '=', company_id)]",
         help="The account used to record depreciation for the asset.",
         required=True,
     )
@@ -25,7 +25,7 @@ class AccountAsset(models.Model):
     account_expense_depreciation_id = fields.Many2one(
         comodel_name="account.account",
         string="Depreciation Expense Account",
-        domain="[('deprecated', '=', False), ('company_ids', '=', company_id)]",
+        domain="[('active', '=', True), ('company_ids', '=', company_id)]",
         help="The account used to record the expense of the depreciation.",
         required=True,
     )
