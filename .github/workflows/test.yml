@@ -83,7 +83,7 @@ jobs:
             -d "${PGDATABASE}" \
             -i "${ADDONS}" \
             --test-enable \
-            --test-tags="/,-test_move_sequence" \
+            --test-tags="-test_move_sequence" \
             --http-interface=127.0.0.1 \
             --stop-after-init | oca_checklog_odoo
       - uses: codecov/codecov-action@v4
