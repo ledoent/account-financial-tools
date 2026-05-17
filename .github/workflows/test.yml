@@ -72,6 +72,7 @@ jobs:
         # Upstream OCA passes because account_asset_management hasn't
         # landed on 19.0 yet. Negation is surgical:
         # account_move_name_sequence's other tests still run.
+        shell: bash
         run: |
           set -exo pipefail
           oca_wait_for_postgres
