@@ -1,3 +1,1 @@
-# [DON'T MERGE] Pin to OCA upstream PR #2293 (account_asset_management 19.0 migration).
-# Remove this file before final merge once #2293 lands.
 odoo-addon-account_asset_management @ git+https://github.com/OCA/account-financial-tools.git@refs/pull/2293/head#subdirectory=account_asset_management
