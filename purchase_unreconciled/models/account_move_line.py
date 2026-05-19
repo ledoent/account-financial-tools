@@ -3,7 +3,7 @@
 
 from datetime import datetime
 
-from odoo import _, models
+from odoo import models
 from odoo.exceptions import ValidationError
 
 
@@ -44,7 +44,7 @@ class AccountMoveLine(models.Model):
         partners = self.mapped("partner_id")
         move_date = writeoff_vals.get("date", datetime.now())
         write_off_vals = {
-            "name": _("Automatic writeoff"),
+            "name": self.env._("Automatic writeoff"),
             "amount_currency": same_curr and amount_writeoff_curr or amount_writeoff,
             "debit": amount_writeoff > 0.0 and amount_writeoff or 0.0,
             "credit": amount_writeoff < 0.0 and -amount_writeoff or 0.0,
@@ -59,7 +59,7 @@ class AccountMoveLine(models.Model):
         }
         counterpart_account = self.mapped("account_id")
         if len(counterpart_account) != 1:
-            raise ValidationError(_("Cannot write-off more than one account"))
+            raise ValidationError(self.env._("Cannot write-off more than one account"))
         counter_part = write_off_vals.copy()
         counter_part["debit"] = write_off_vals["credit"]
         counter_part["credit"] = write_off_vals["debit"]

@@ -1,4 +1,4 @@
-from odoo import _, fields, models
+from odoo import fields, models
 
 
 class PurchaseUnreconciledExceededWiz(models.TransientModel):
@@ -21,7 +21,7 @@ class PurchaseUnreconciledExceededWiz(models.TransientModel):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
-            "name": _("Purchase unreconciled exceeded"),
+            "name": self.env._("Purchase unreconciled exceeded"),
             "res_model": self._name,
             "res_id": self.id,
             "view_mode": "form",

@@ -11,6 +11,7 @@ class TestPurchaseUnreconciled(SingleTransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
 
         cls.po_obj = cls.env["purchase.order"]
         cls.product_obj = cls.env["product.product"]

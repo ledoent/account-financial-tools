@@ -17,8 +17,7 @@
                     class="oe_stat_button"
                     icon="fa-gears"
                     invisible="not unreconciled"
-                >
-                </button>
+                />
                 <button
                     type="object"
                     string="Reconcile"
@@ -27,8 +26,7 @@
                     class="oe_stat_button"
                     icon="fa-link"
                     invisible="not unreconciled or state != 'done'"
-                >
-                </button>
+                />
             </div>
         </field>
     </record>

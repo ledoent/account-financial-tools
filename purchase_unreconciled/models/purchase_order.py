@@ -1,8 +1,8 @@
 # Copyright 2019-21 ForgeFlow S.L..
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-from odoo import _, api, exceptions, fields, models
-from odoo.osv import expression
+from odoo import api, exceptions, fields, models
+from odoo.fields import Domain
 from odoo.tools import float_is_zero
 
 
@@ -50,9 +50,9 @@ class PurchaseOrder(models.Model):
                 rec.company_id
             )._get_purchase_unreconciled_base_domain()
             domain_account = rec._get_account_domain()
-            unreconciled_domain = expression.AND([domain, domain_account])
-            unreconciled_domain = expression.AND(
-                [unreconciled_domain, [("purchase_order_id", "=", rec.id)]]
+            unreconciled_domain = Domain.AND(domain, domain_account)
+            unreconciled_domain = Domain.AND(
+                unreconciled_domain, [("purchase_order_id", "=", rec.id)]
             )
             unreconciled_items = acc_item.search(unreconciled_domain)
             rec.unreconciled = len(unreconciled_items) > 0
@@ -60,12 +60,12 @@ class PurchaseOrder(models.Model):
 
     def _search_unreconciled(self, operator, value):
         if operator not in ("=", "!=") or not isinstance(value, bool):
-            raise ValueError(_("Unsupported search operator"))
+            raise ValueError(self.env._("Unsupported search operator"))
         acc_item = self.env["account.move.line"]
         domain = self._get_purchase_unreconciled_base_domain()
-        domain = expression.AND([domain, [("purchase_order_id", "!=", False)]])
+        domain = Domain.AND(domain, [("purchase_order_id", "!=", False)])
         domain_account = self._get_account_domain()
-        domain = expression.AND([domain_account, domain])
+        domain = Domain.AND(domain_account, domain)
         acc_items = acc_item.search(domain)
         unreconciled_pos_ids = acc_items.mapped("purchase_order_id").ids
         if value:
@@ -80,10 +80,14 @@ class PurchaseOrder(models.Model):
             self.company_id.id
         )._get_purchase_unreconciled_base_domain()
         domain_account = self._get_account_domain()
-        unreconciled_domain = expression.AND([domain, domain_account])
-        unreconciled_domain = expression.AND(
-            [unreconciled_domain, [("purchase_order_id", "=", self.id)]]
+        unreconciled_domain = Domain.AND(domain, domain_account)
+        unreconciled_domain = Domain.AND(
+            unreconciled_domain, [("purchase_order_id", "=", self.id)]
         )
+        # Odoo 19 Domain is immutable; convert to the prefix-notation list
+        # so we can strip out the amount_residual filter (this action shows
+        # all related items, including ones that already have residual=0).
+        unreconciled_domain = list(unreconciled_domain)
         unreconciled_domain.remove(("amount_residual", "!=", 0.0))
         unreconciled_domain.remove("&")
         unreconciled_items = acc_item.search(unreconciled_domain)
@@ -98,7 +102,7 @@ class PurchaseOrder(models.Model):
             or not self.company_id.purchase_reconcile_journal_id
         ):
             raise exceptions.ValidationError(
-                _(
+                self.env._(
                     "The write-off account and journal for purchases is missing. An "
                     "accountant must fill that information"
                 )
@@ -107,30 +111,25 @@ class PurchaseOrder(models.Model):
         res = {}
         domain = self._get_purchase_unreconciled_base_domain()
         domain_account = self._get_account_domain()
-        unreconciled_domain = expression.AND([domain, domain_account])
-        unreconciled_domain = expression.AND(
-            [domain, [("purchase_order_id", "=", self.id)]]
-        )
-        unreconciled_domain = expression.AND(
-            [unreconciled_domain, [("company_id", "=", self.company_id.id)]]
+        unreconciled_domain = Domain.AND(domain, domain_account)
+        unreconciled_domain = Domain.AND(domain, [("purchase_order_id", "=", self.id)])
+        unreconciled_domain = Domain.AND(
+            unreconciled_domain, [("company_id", "=", self.company_id.id)]
         )
         writeoff_to_reconcile = self.env["account.move.line"]
         all_writeoffs = self.env["account.move.line"]
-        reconciling_groups = self.env["account.move.line"].read_group(
-            domain=unreconciled_domain,
-            fields=["account_id", "product_id", "oca_purchase_line_id"],
-            groupby=["account_id", "product_id", "oca_purchase_line_id"],
-            lazy=False,
+        # Odoo 19 dropped the public read_group in favour of _read_group, which
+        # returns tuples of records (one per groupby field) instead of dicts
+        # with (id, name) pairs. Adapt the iteration accordingly.
+        reconciling_groups = self.env["account.move.line"]._read_group(
+            unreconciled_domain,
+            groupby=["account_id", "product_id", "purchase_line_id"],
         )
         unreconciled_items = self.env["account.move.line"].search(unreconciled_domain)
-        for group in reconciling_groups:
-            account_id = group["account_id"][0]
-            product_id = group["product_id"][0] if group["product_id"] else False
-            purchase_line_id = (
-                group["oca_purchase_line_id"][0]
-                if group["oca_purchase_line_id"]
-                else False
-            )
+        for account, product, purchase_line in reconciling_groups:
+            account_id = account.id
+            product_id = product.id if product else False
+            purchase_line_id = purchase_line.id if purchase_line else False
             unreconciled_items_group = unreconciled_items.filtered(
                 lambda line, account_id=account_id, product_id=product_id: (
                     line.account_id.id == account_id
@@ -174,7 +173,7 @@ class PurchaseOrder(models.Model):
                 ).reconcile()
             reconciled_ids = unreconciled_items | all_writeoffs
             res = {
-                "name": _("Reconciled journal items"),
+                "name": self.env._("Reconciled journal items"),
                 "type": "ir.actions.act_window",
                 "view_type": "form",
                 "view_mode": "list,form",
@@ -261,18 +260,13 @@ class PurchaseOrder(models.Model):
             and abs(self.amount_unreconciled / amount_total)
             >= self.company_id.purchase_reconcile_tolerance / 100.0
         ):
-            params = {
-                "amount_unreconciled": self.amount_unreconciled,
-                "amount_allowed": self.amount_total
+            exception_msg = self.env._(
+                "Finance Warning: \nUnreconciled amount is too high. Total "
+                "unreconciled amount: %(amount_unreconciled)s Maximum unreconciled"
+                " amount accepted: %(amount_allowed)s ",
+                amount_unreconciled=self.amount_unreconciled,
+                amount_allowed=self.amount_total
                 * self.company_id.purchase_reconcile_tolerance
                 / 100.0,
-            }
-            exception_msg = (
-                _(
-                    "Finance Warning: \nUnreconciled amount is too high. Total "
-                    "unreconciled amount: %(amount_unreconciled)s Maximum unreconciled"
-                    " amount accepted: %(amount_allowed)s "
-                )
-                % params
             )
         return exception_msg
