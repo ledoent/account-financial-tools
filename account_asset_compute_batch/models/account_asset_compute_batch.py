@@ -70,9 +70,10 @@ class AssetComputeBatch(models.Model):
         string="Depreciation Amount",
         compute="_compute_depre_amount",
     )
-    _sql_constraints = [
-        ("name_uniq", "UNIQUE(name)", "Batch name must be unique!"),
-    ]
+    _name_uniq = models.Constraint(
+        "UNIQUE(name)",
+        "Batch name must be unique!",
+    )
 
     @api.depends("state")
     def _compute_depre_amount(self):
@@ -85,10 +86,10 @@ class AssetComputeBatch(models.Model):
         for rec in self:
             rec.depre_amount = res.get(rec.id)
 
-    def unlink(self):
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_non_draft(self):
         if self.filtered(lambda batch: batch.state != "draft"):
             raise ValidationError(self.env._("Only draft batch can be deleted!"))
-        return super().unlink()
 
     def action_compute(self):
         asset_model = self.env["account.asset"]
