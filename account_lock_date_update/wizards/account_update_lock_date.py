@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import RedirectWarning, UserError
 from odoo.tools.misc import format_date
 
 from odoo.addons.account.models.company import LOCK_DATE_FIELDS
@@ -52,6 +52,44 @@ class AccountUpdateLockDate(models.TransientModel):
         if not (has_adviser_group or self.env.user._is_admin()):
             raise UserError(self.env._("You are not allowed to execute this action."))
 
+    def _fix_redirect_warning(self, exc):
+        """Rewrite account.bank.statement.line redirects to account.move.
+
+        In Odoo 19, account.bank.statement.line has no standalone list/form
+        views in core. When company._validate_locks() raises a RedirectWarning
+        for unreconciled bank statement lines, we redirect to the parent
+        account.move journal entries instead, which do have views.
+        """
+        action = exc.args[1] if len(exc.args) > 1 else {}
+        if not (
+            isinstance(action, dict)
+            and action.get("res_model") == "account.bank.statement.line"
+        ):
+            return exc
+        if action.get("res_id"):
+            line = self.env["account.bank.statement.line"].browse(action["res_id"])
+            new_action = dict(
+                action,
+                res_model="account.move",
+                res_id=line.move_id.id,
+                view_mode="form",
+            )
+        else:
+            domain = action.get("domain", [])
+            line_ids = next(
+                (d[2] for d in domain if isinstance(d, (list, tuple)) and d[0] == "id"),
+                [],
+            )
+            lines = self.env["account.bank.statement.line"].browse(line_ids)
+            new_action = dict(
+                action,
+                res_model="account.move",
+                view_mode="list,form",
+                domain=[("id", "in", lines.move_id.ids)],
+            )
+            new_action.pop("res_id", None)
+        return RedirectWarning(exc.args[0], new_action, *exc.args[2:])
+
     def execute(self):
         self.ensure_one()
         self._check_execute_allowed()
@@ -79,4 +117,7 @@ class AccountUpdateLockDate(models.TransientModel):
                     )
                 )
             vals[lock_field] = self[lock_field]
-        self.company_id.sudo().write(vals)
+        try:
+            self.company_id.sudo().write(vals)
+        except RedirectWarning as exc:
+            raise self._fix_redirect_warning(exc) from exc
