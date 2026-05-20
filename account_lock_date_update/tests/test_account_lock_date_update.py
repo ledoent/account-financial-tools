@@ -108,7 +108,7 @@ class TestAccountLockDateUpdate(TransactionCase):
             self.assertIn(stmt_line.move_id.id, action.get("domain", [[]])[0][2])
 
     def test_04_two_unreconciled_lines_redirect_domain(self):
-        """RedirectWarning for multiple unreconciled lines must use domain on account.move."""
+        """Multiple unreconciled lines: redirect must use domain on account.move."""
         lines = self.env["account.bank.statement.line"].create(
             [
                 {
