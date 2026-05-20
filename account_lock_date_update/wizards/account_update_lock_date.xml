@@ -10,6 +10,7 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <field name="has_parent_company" invisible="1" />
                     <group id="soft_lock_dates" string="Reversible Lock Dates">
                         <field name="company_id" invisible="1" />
                         <field name="sale_lock_date" options="{'warn_future': true}" />
@@ -25,6 +26,17 @@
                     </group>
                     <group id="hard_lock_dates" string="Irreversible Lock Date">
                         <field name="hard_lock_date" options="{'warn_future': true}" />
+                    </group>
+                    <group
+                        id="parent_lock_dates"
+                        string="Parent Company Lock Dates (hierarchy minimum)"
+                        invisible="not has_parent_company"
+                    >
+                        <field name="parent_sale_lock_date" readonly="1" />
+                        <field name="parent_purchase_lock_date" readonly="1" />
+                        <field name="parent_tax_lock_date" readonly="1" />
+                        <field name="parent_fiscalyear_lock_date" readonly="1" />
+                        <field name="parent_hard_lock_date" readonly="1" />
                     </group>
                 </sheet>
                 <footer>
