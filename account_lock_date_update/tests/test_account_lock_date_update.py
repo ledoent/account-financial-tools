@@ -107,9 +107,40 @@ class TestAccountLockDateUpdate(TransactionCase):
         else:
             self.assertIn(stmt_line.move_id.id, action.get("domain", [[]])[0][2])
 
-    def test_04_no_unreconciled_lines_succeeds(self):
+    def test_04_two_unreconciled_lines_redirect_domain(self):
+        """RedirectWarning for multiple unreconciled lines must use domain on account.move."""
+        lines = self.env["account.bank.statement.line"].create(
+            [
+                {
+                    "journal_id": self.bank_journal.id,
+                    "date": "2000-02-01",
+                    "payment_ref": "unrec_a",
+                    "amount": 10.0,
+                },
+                {
+                    "journal_id": self.bank_journal.id,
+                    "date": "2000-02-02",
+                    "payment_ref": "unrec_b",
+                    "amount": 20.0,
+                },
+            ]
+        )
+        self.assertFalse(any(lines.mapped("is_reconciled")))
+        wizard = self._make_wizard({"fiscalyear_lock_date": "2000-06-30"})
+        with self.assertRaises(RedirectWarning) as ctx:
+            wizard.with_user(self.demo_user.id).execute()
+        action = ctx.exception.args[1]
+        self.assertEqual(action.get("res_model"), "account.move")
+        self.assertFalse(
+            action.get("res_id"), "Multi-line redirect must use domain, not res_id"
+        )
+        domain_ids = action.get("domain", [[]])[0][2]
+        for line in lines:
+            self.assertIn(line.move_id.id, domain_ids)
+
+    def test_05_no_unreconciled_lines_succeeds(self):
         """execute() must succeed when there are no unreconciled bank statement lines
-        in the period being locked. Uses a far-past date guaranteed to be clean."""
+        in the period. Uses a far-past date guaranteed to be clean."""
         wizard = self._make_wizard({"fiscalyear_lock_date": "1990-12-31"})
         # No bank statement lines exist before 1990 — should not raise
         wizard.with_user(self.demo_user.id).execute()
