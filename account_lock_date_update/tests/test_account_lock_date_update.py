@@ -138,9 +138,34 @@ class TestAccountLockDateUpdate(TransactionCase):
         for line in lines:
             self.assertIn(line.move_id.id, domain_ids)
 
-    def test_05_no_unreconciled_lines_succeeds(self):
-        """execute() must succeed when there are no unreconciled bank statement lines
-        in the period. Uses a far-past date guaranteed to be clean."""
+    def test_05_parent_lock_dates_shown_for_child_company(self):
+        """Wizard exposes parent company lock dates so branch users see the hierarchy
+        minimum. Odoo 19 enforces max(self, ancestors) so dates below parent have
+        no additional effect."""
+        child = self.env["res.company"].create(
+            {"name": "Test Branch", "parent_id": self.company.id}
+        )
+        self.company.write({"fiscalyear_lock_date": "2024-12-31"})
+        wizard = (
+            self.env["account.update.lock_date"].sudo().create({"company_id": child.id})
+        )
+        self.assertTrue(wizard.has_parent_company)
+        self.assertEqual(
+            fields.Date.to_string(wizard.parent_fiscalyear_lock_date), "2024-12-31"
+        )
+
+    def test_06_no_parent_for_root_company(self):
+        """Root company wizard has no parent lock dates."""
+        wizard = (
+            self.env["account.update.lock_date"]
+            .sudo()
+            .create({"company_id": self.company.id})
+        )
+        self.assertFalse(wizard.has_parent_company)
+        self.assertFalse(wizard.parent_fiscalyear_lock_date)
+
+    def test_07_no_unreconciled_lines_succeeds(self):
+        """execute() succeeds when no unreconciled lines exist in the period."""
         wizard = self._make_wizard({"fiscalyear_lock_date": "1990-12-31"})
         # No bank statement lines exist before 1990 — should not raise
         wizard.with_user(self.demo_user.id).execute()

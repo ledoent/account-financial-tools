@@ -37,6 +37,33 @@ class AccountUpdateLockDate(models.TransientModel):
         "does not allow any exception.",
     )
 
+    # Read-only fields showing the effective floor enforced by ancestor companies.
+    # Odoo 19 resolves lock dates as max(self, all ancestors), so a child company
+    # date below these values has no additional effect.
+    has_parent_company = fields.Boolean(compute="_compute_parent_lock_dates")
+    parent_fiscalyear_lock_date = fields.Date(
+        string="Parent Global Lock Date",
+        compute="_compute_parent_lock_dates",
+    )
+    parent_tax_lock_date = fields.Date(
+        string="Parent Tax Return Lock Date",
+        compute="_compute_parent_lock_dates",
+    )
+    parent_sale_lock_date = fields.Date(compute="_compute_parent_lock_dates")
+    parent_purchase_lock_date = fields.Date(compute="_compute_parent_lock_dates")
+    parent_hard_lock_date = fields.Date(compute="_compute_parent_lock_dates")
+
+    @api.depends("company_id")
+    def _compute_parent_lock_dates(self):
+        for wizard in self:
+            company = wizard.company_id.sudo()
+            # parent_ids includes self; subtract to get ancestors only
+            ancestors = company.parent_ids - company
+            wizard.has_parent_company = bool(ancestors)
+            for lock_field in LOCK_DATE_FIELDS:
+                dates = [c[lock_field] for c in ancestors if c[lock_field]]
+                wizard[f"parent_{lock_field}"] = max(dates) if dates else False
+
     @api.model
     def default_get(self, field_list):
         res = super().default_get(field_list)
