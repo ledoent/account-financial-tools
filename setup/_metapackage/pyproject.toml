@@ -1,6 +1,6 @@
 [project]
 name = "odoo-addons-oca-account-financial-tools"
-version = "19.0.20260520.0"
+version = "19.0.20260521.0"
 dependencies = [
     "odoo-addon-account_account_tag_code==19.0.*",
     "odoo-addon-account_chart_update==19.0.*",
@@ -10,6 +10,7 @@ dependencies = [
     "odoo-addon-account_move_name_sequence==19.0.*",
     "odoo-addon-account_move_post_date_user==19.0.*",
     "odoo-addon-account_move_print==19.0.*",
+    "odoo-addon-account_move_template==19.0.*",
     "odoo-addon-account_move_total_by_account_internal_group==19.0.*",
     "odoo-addon-account_netting==19.0.*",
     "odoo-addon-account_usability==19.0.*",
