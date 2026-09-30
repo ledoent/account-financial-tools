@@ -30,7 +30,7 @@ class AccountAsset(models.Model):
     _order = "date_start desc, code, name"
     _check_company_auto = True
     _check_company_domain = models.check_company_domain_parent_of
-    _rec_names_search = ["code", "name"]
+    _rec_names_search = ("code", "name")
 
     account_move_line_ids = fields.One2many(
         comodel_name="account.move.line",
@@ -131,7 +131,6 @@ class AccountAsset(models.Model):
     active = fields.Boolean(default=True)
     partner_id = fields.Many2one(
         comodel_name="res.partner",
-        string="Partner",
     )
     method = fields.Selection(
         selection=lambda self: self.env["account.asset.profile"]._selection_method(),
@@ -235,7 +234,6 @@ class AccountAsset(models.Model):
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
-        string="Company",
         required=True,
         readonly=True,
         default=lambda self: self._default_company_id(),
@@ -296,8 +294,10 @@ class AccountAsset(models.Model):
     def _compute_depreciation(self):
         for asset in self:
             lines = asset.depreciation_line_ids.filtered(
-                lambda line: line.type in ("depreciate", "remove")
-                and (line.init_entry or line.move_check)
+                lambda line: (
+                    line.type in ("depreciate", "remove")
+                    and (line.init_entry or line.move_check)
+                )
             )
             value_depreciated = sum(line.amount for line in lines)
             residual = asset.depreciation_base - value_depreciated
@@ -386,10 +386,12 @@ class AccountAsset(models.Model):
     @api.constrains("date_start", "method_end", "method_number", "method_time")
     def _check_dates(self):
         if self.filtered(
-            lambda a: a.method_time == "year"
-            and not a.method_number
-            and a.method_end
-            and a.method_end <= a.date_start
+            lambda a: (
+                a.method_time == "year"
+                and not a.method_number
+                and a.method_end
+                and a.method_end <= a.date_start
+            )
         ):
             raise UserError(self.env._("The Start Date must precede the Ending Date."))
 

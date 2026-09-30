@@ -140,22 +140,46 @@ class AccountMove(models.Model):
             invoices.line_ids.asset_id.unlink()
         return super().button_draft()
 
-    def _reverse_move_vals(self, default_values, cancel=True):
-        move_vals = super()._reverse_move_vals(default_values, cancel)
-        if move_vals["move_type"] not in ("out_invoice", "out_refund"):
-            for line_command in move_vals.get("line_ids", []):
-                line_vals = line_command[2]  # (0, 0, {...})
-                asset = self.env["account.asset"].browse(line_vals["asset_id"])
-                # We remove the asset if we recognize that we are reversing
-                # the asset creation
-                if asset:
-                    asset_line = self.env["account.asset.line"].search(
-                        [("asset_id", "=", asset.id), ("type", "=", "create")], limit=1
+    def _reverse_moves(self, default_values_list=None, cancel=False):
+        # 20.0 deleted _reverse_move_vals, the hook the 19.0 code extended:
+        # reverses are built with copy() now, so there is no vals dict to edit
+        # and the work has to happen around the created records.
+        #
+        # Two field flags shape what is needed. asset_id is copy=False, so a
+        # reverse line never carries it -- nothing to clear there. But
+        # asset_profile_id IS copied, so an uncleared reverse would create a
+        # fresh asset on post, which is the opposite of reversing. And
+        # account.asset.unlink() already clears asset_id on every referencing
+        # move line, so the ondelete="restrict" needs no handling here.
+        assets_to_remove = self.env["account.asset"]
+        reverse_source = {}
+        for move in self:
+            if move.move_type in ("out_invoice", "out_refund"):
+                continue
+            for line in move.line_ids.filtered("asset_id"):
+                # Only remove the asset when this really is the reversal of the
+                # move that created it, not of some later depreciation entry.
+                asset_line = self.env["account.asset.line"].search(
+                    [("asset_id", "=", line.asset_id.id), ("type", "=", "create")],
+                    limit=1,
+                )
+                if asset_line and asset_line.move_id == move:
+                    assets_to_remove |= line.asset_id
+                    reverse_source[move.id] = True
+
+        reverse_moves = super()._reverse_moves(default_values_list, cancel)
+
+        if assets_to_remove:
+            assets_to_remove.unlink()
+            # Clear the copied profile on every line of the affected reverses:
+            # undoing an asset creation must not hand the reversal what it
+            # needs to create another one.
+            for move, reverse_move in zip(self, reverse_moves, strict=False):
+                if reverse_source.get(move.id):
+                    reverse_move.line_ids.filtered("asset_profile_id").write(
+                        {"asset_profile_id": False}
                     )
-                    if asset_line and asset_line.move_id == self:
-                        asset.unlink()
-                        line_vals.update(asset_profile_id=False, asset_id=False)
-        return move_vals
+        return reverse_moves
 
     def action_view_assets(self):
         assets = (
@@ -183,14 +207,12 @@ class AccountMoveLine(models.Model):
 
     asset_profile_id = fields.Many2one(
         comodel_name="account.asset.profile",
-        string="Asset Profile",
         compute="_compute_asset_profile",
         store=True,
         readonly=False,
     )
     asset_id = fields.Many2one(
         comodel_name="account.asset",
-        string="Asset",
         ondelete="restrict",
         check_company=True,
         copy=False,

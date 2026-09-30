@@ -590,6 +590,41 @@ class TestAssetManagement(AccountTestInvoicingCommon):
             new_asset.purchase_value, line.price_unit * line.quantity, places=2
         )
 
+    def test_09b_reverse_invoice_removes_the_asset_it_created(self):
+        """Reversing the bill that created an asset must remove that asset.
+
+        This is what the _reverse_moves override exists for. 20.0 deleted the
+        _reverse_move_vals hook the 19.0 code extended -- reverses are built with
+        copy() now -- so without the override the asset survives the reversal
+        and the reverse line keeps pointing at it. No other test here reverses
+        an asset-creating invoice: test_18 reverses a depreciation move on a
+        manually created asset, which never reaches this code.
+        """
+        all_asset = self.env["account.asset"].search([])
+        invoice = self.invoice
+        asset_profile = self.car5y
+        asset_profile.asset_product_item = False
+        invoice.invoice_line_ids[0].write(
+            {"quantity": 2, "asset_profile_id": asset_profile.id}
+        )
+        invoice.action_post()
+        new_asset = self.env["account.asset"].search([]) - all_asset
+        self.assertEqual(len(new_asset), 1, "the invoice should have created one asset")
+
+        reverse = invoice._reverse_moves(cancel=False)
+
+        self.assertFalse(
+            new_asset.exists(), "reversing the creating invoice must remove the asset"
+        )
+        self.assertFalse(
+            reverse.line_ids.filtered("asset_id"),
+            "no reverse line may still reference the removed asset",
+        )
+        self.assertFalse(
+            reverse.line_ids.filtered("asset_profile_id"),
+            "the reverse lines must not carry the asset profile either",
+        )
+
     def test_10_asset_from_invoice_product_item(self):
         all_asset = self.env["account.asset"].search([])
         invoice = self.invoice
@@ -874,11 +909,9 @@ class TestAssetManagement(AccountTestInvoicingCommon):
         )
         wiz = Form(
             self.env["wiz.asset.move.reverse"].with_context(
-                **{
-                    "active_model": depreciation_line._name,
-                    "active_id": depreciation_line.id,
-                    "active_ids": [depreciation_line.id],
-                }
+                active_model=depreciation_line._name,
+                active_id=depreciation_line.id,
+                active_ids=[depreciation_line.id],
             )
         )
         reverse_wizard = wiz.save()
@@ -1020,8 +1053,9 @@ class TestAssetManagement(AccountTestInvoicingCommon):
         )
         self.assertEqual(len(aml_sale), 1)
         aml_depre = account_move_remove.line_ids.filtered(
-            lambda x: x.account_id == self.car5y.account_depreciation_id
-            and x.debit == 1000
+            lambda x: (
+                x.account_id == self.car5y.account_depreciation_id and x.debit == 1000
+            )
         )
         self.assertEqual(len(aml_depre), 1)
         aml_asset = account_move_remove.line_ids.filtered(
