@@ -4,3 +4,6 @@
 - Andrea Stirpe \<<a.stirpe@onestein.nl>\>
 - [Komit](https://komit-consulting.com):
   - Vang Nguyen Phu
+
+- [Ledo Enterprises](https://github.com/ledoent):
+  - Don Kendall \<<dkendall@ledoweb.com>\>
