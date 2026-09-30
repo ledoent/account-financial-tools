@@ -21,3 +21,6 @@
 - [Sygel](https://www.sygel.es):
   - Manuel Regidor \<<manuel.regidor@sygel.es>\>
 - [Acysos S.L.](https://www.acysos.com)
+
+- [Ledo Enterprises](https://github.com/ledoent):
+  - Don Kendall \<<dkendall@ledoweb.com>\>

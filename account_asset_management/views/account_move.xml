@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <record id="view_move_form" model="ir.ui.view">
         <field name="name">account.move.form.account.asset.management</field>
@@ -10,7 +10,7 @@
                     name="action_view_assets"
                     type="object"
                     class="oe_stat_button"
-                    icon="fa-cube"
+                    icon="deployed_code"
                     invisible="asset_count == 0"
                     groups="account.group_account_invoice"
                 >
