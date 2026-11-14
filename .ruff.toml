@@ -3,6 +3,13 @@ target-version = "py310"
 fix = true
 
 [lint]
+# Pin the base rule set instead of inheriting ruff's default. The 20.0 skeleton
+# bumps ruff v0.13.0 -> v0.16.8, and 0.16.8 ships a much wider default; since this
+# file only ever said `extend-select`, that drift silently switched on whole
+# families the repo never chose (BLE, DTZ, FLY, PIE, RUF, SIM). These four are
+# ruff's classic default, so `select` + `extend-select` below reproduces exactly
+# what v0.13.0 enforced on 19.0 — B, C90, E501, I and UP still apply.
+select = ["E4", "E7", "E9", "F"]
 extend-select = [
     "B",
     "C90",
@@ -11,6 +18,10 @@ extend-select = [
     "UP",  # pyupgrade
 ]
 extend-safe-fixes = ["UP008"]
+# Odoo declares `_inherit`/`_depends` as plain class-level lists — core 20.0 does
+# it too (e.g. addons/project/models/project_task.py:96). ruff 0.16.8, which the
+# 20.0 skeleton pins, turned RUF012 on by default, so that idiom now fails
+# pre-commit in every OCA 20.0 repo.
 exclude = ["setup/*"]
 
 [format]

@@ -1,0 +1,4 @@
+# DO NOT MERGE -- temporary pins until the 20.0 ports land and wheels ship.
+# OCA CI appends its own generated entries to this file with >>, so these survive.
+odoo-addon-report_xlsx @ git+https://github.com/ledoent/reporting-engine.git@20.0-mig-report_xlsx#subdirectory=report_xlsx
+odoo-addon-report_xlsx_helper @ git+https://github.com/ledoent/reporting-engine.git@20.0-mig-report_xlsx_helper#subdirectory=report_xlsx_helper
