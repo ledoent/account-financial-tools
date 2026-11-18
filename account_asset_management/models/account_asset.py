@@ -1013,7 +1013,25 @@ class AccountAsset(models.Model):
                 }
             )
             if self.method_time == "year":
-                fy_residual_amount -= fy_amount
+                # Round the carried residual, not just the amount taken out of
+                # it. `fy_amount` is already rounded and `depreciation_base` is
+                # a Monetary, so the exact residual is always a whole number of
+                # currency units -- rounding here removes binary representation
+                # error and can never change a true value.
+                #
+                # Left unrounded, the error compounds across fiscal years and
+                # is then fed back into `_compute_year_amount()` as the base
+                # for the next year's degressive rate. Where that lands on a
+                # half-cent boundary the rate rounds the wrong way, and because
+                # the final year takes `fy_amount = fy_residual_amount` the
+                # displaced cent surfaces on the last line of the board.
+                #
+                # Reproduced on 10,000.00 at a 0.10 degressive factor over 24
+                # years: line 20 computes 135.08 where exact arithmetic gives
+                # 135.09, and the cent reappears on line 24 (886.29 vs
+                # 886.28). The board still sums to the depreciation base -- it
+                # is a misallocation between periods, not a lost cent.
+                fy_residual_amount = currency.round(fy_residual_amount - fy_amount)
                 if currency.is_zero(fy_residual_amount):
                     break
         if table:

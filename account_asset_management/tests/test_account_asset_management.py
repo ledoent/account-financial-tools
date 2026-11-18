@@ -139,6 +139,70 @@ class TestAssetManagement(AccountTestInvoicingCommon):
             }
         )
 
+    def test_degressive_residual_is_rounded_between_fiscal_years(self):
+        """The carried residual must not accumulate binary drift.
+
+        `fy_amount` was already rounded; `fy_residual_amount` was not, so the
+        error compounded across fiscal years and was fed back into
+        `_compute_year_amount()` as the base for the next year's degressive
+        rate. Where that landed on a half-cent boundary the rate rounded the
+        wrong way, and since the final year takes the whole residual the
+        displaced cent surfaced on the LAST line of the board.
+
+        10,000.00 at a 0.10 degressive factor over 24 years reproduces it:
+        line 20 computed 135.08 where exact arithmetic gives 135.09, and the
+        cent reappeared on line 24. The board summed correctly either way,
+        which is why this never showed up as an imbalance -- it is a
+        misallocation between periods.
+        """
+        profile = self.asset_profile_model.create(
+            {
+                "account_expense_depreciation_id": self.company_data[
+                    "default_account_expense"
+                ].id,
+                "account_asset_id": self.company_data["default_account_assets"].id,
+                "account_depreciation_id": self.company_data[
+                    "default_account_assets"
+                ].id,
+                "journal_id": self.company_data["default_journal_purchase"].id,
+                "name": "Degressive 24Y rounding",
+                "method": "degressive",
+                "method_time": "year",
+                "method_number": 24,
+                "method_period": "year",
+                "method_progress_factor": 0.10,
+            }
+        )
+        asset = self.asset_model.create(
+            {
+                "name": "Degressive rounding probe",
+                "profile_id": profile.id,
+                "purchase_value": 10000.00,
+                "date_start": time.strftime("%Y-01-01"),
+            }
+        )
+        asset.compute_depreciation_board()
+        asset.invalidate_recordset()
+        lines = asset.depreciation_line_ids.filtered(
+            lambda line: line.type == "depreciate"
+        )
+        currency = asset.company_id.currency_id
+
+        # Every line is already at currency precision -- the assertion that
+        # fails without the fix is the per-line value, not the total.
+        for line in lines:
+            self.assertEqual(
+                line.amount,
+                currency.round(line.amount),
+                "a depreciation line carries sub-cent drift",
+            )
+
+        # And the board still accounts for the whole base, fixed or not. Kept
+        # so a future change cannot "fix" the rounding by losing a cent.
+        self.assertAlmostEqual(
+            sum(lines.mapped("amount")), asset.depreciation_base, places=2
+        )
+
     def test_invoice_line_without_product(self):
         tax = self.env["account.tax"].create(
             {
