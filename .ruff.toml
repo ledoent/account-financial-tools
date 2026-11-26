@@ -22,6 +22,16 @@ extend-safe-fixes = ["UP008"]
 # it too (e.g. addons/project/models/project_task.py:96). ruff 0.16.8, which the
 # 20.0 skeleton pins, turned RUF012 on by default, so that idiom now fails
 # pre-commit in every OCA 20.0 repo.
+#
+# KEEP THIS DIVERGENCE. Upstream 20.0 solved only the RUF012 half, by adding
+# `extend-ignore = ["RUF012"]` and leaving the base rule set inherited. Both sides
+# therefore edit this same block and the merge conflicts on every refresh of this
+# branch — resolve it in favour of THIS file, not upstream's. Measured with the
+# pinned ruff v0.16.8 on 2026-11-26: this config reports 0 findings on
+# account_asset_management, upstream's reports 15 (5 DTZ011, 3 SIM102, 2 RUF015,
+# 2 DTZ005, PLC0206, FLY002, BLE001) across five files. Adopting upstream's
+# version means either a red pre-commit gate or rewriting depreciation and
+# reporting logic to satisfy lint. Aligning with upstream is tracked separately.
 exclude = ["setup/*"]
 
 [format]
